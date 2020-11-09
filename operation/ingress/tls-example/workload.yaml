@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    run: sockjs
+  name: sockjs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: sockjs
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        run: sockjs
+    spec:
+      containers:
+        - image: xishengcai/sockjs
+          name: sockjs
+          resources: {}
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    run: sockjs
+  name: sockjs
+spec:
+  ports:
+    - port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    run: sockjs
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    run: tomcat
+  name: tomcat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: tomcat
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        run: tomcat
+    spec:
+      containers:
+        - image: tomcat
+          name: tomcat
+          resources: {}
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    run: tomcat
+  name: tomcat
+spec:
+  ports:
+    - port: 8080
+      protocol: TCP
+      targetPort: 8080
+      name: p1
+  selector:
+    run: tomcat
+status:
+  loadBalancer: {}
+

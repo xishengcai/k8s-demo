@@ -1,0 +1,137 @@
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: mysql
+  namespace: default
+spec:
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: mysql
+  serviceName: mysql-service
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: mysql-root-password
+                  name: mysql-mysql
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: mysql-password
+                  name: mysql-mysql
+            - name: MYSQL_USER
+              value: test
+            - name: MYSQL_DATABASE
+          image: registry.cn-hangzhou.aliyuncs.com/launcher/mysql:8.0.18
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - mysqladmin ping -u root -p${MYSQL_ROOT_PASSWORD}
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          name: mysql-mysql
+          ports:
+            - containerPort: 3306
+              name: mysql
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - mysqladmin ping -u root -p${MYSQL_ROOT_PASSWORD}
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: "2"
+              memory: 4Gi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: data
+            - mountPath: /etc/mysql/conf.d
+              name: configurations
+      dnsPolicy: ClusterFirst
+      initContainers:
+        - command:
+            - rm
+            - -fr
+            - /var/lib/mysql/lost+found
+          image: busybox:1.25.0
+          imagePullPolicy: IfNotPresent
+          name: remove-lost-found
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: data
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - configMap:
+            defaultMode: 420
+            name: mysql-mysql
+          name: configurations
+        - name: data
+          persistentVolumeClaim:
+            claimName: nfs-mysql
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: mysql
+  namespace: default
+spec:
+  ports:
+    - name: http
+      port: 3306
+      protocol: TCP
+      targetPort: 3306
+  selector:
+    app: mysql
+  type: NodePort
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: mysql
+  name: mysql
+  namespace: default
+data:
+  mysql.cnf: |-
+    [mysqld]
+    pid-file=/var/run/mysqld/mysqld.pid
+    socket=/var/run/mysqld/mysqld.sock
+    datadir=/var/lib/mysql
+    secure-file-priv=NULL
+    symbolic-links=0
+    lower_case_table_names=1
+    max_connections=500
+    sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'

@@ -1,0 +1,161 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/instance: ingress-nginx
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ingress-nginx
+  namespace: ingress-nginx
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ingress-nginx
+  namespace: ingress-nginx
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: ingress-nginx
+    namespace: ingress-nginx
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tls-ingress
+  labels:
+    k8s-app: tls-ingress
+  namespace: ingress-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: tls-ingress
+  revisionHistoryLimit: 10
+  minReadySeconds: 0
+  template:
+    metadata:
+      labels:
+        k8s-app: tls-ingress
+    spec:
+      terminationGracePeriodSeconds: 60
+      serviceAccountName: ingress-nginx
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - image:  registry.cn-hangzhou.aliyuncs.com/launcher/nginx-ingress-controller:0.20.0
+          imagePullPolicy: IfNotPresent
+          name: nginx
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 10254
+              scheme: HTTP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 10254
+              scheme: HTTP
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+          ports:
+            - containerPort: 80
+              protocol: TCP
+#              hostPort: 40001
+            - containerPort: 443
+              protocol: TCP
+#              hostPort: 40002
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          args:
+            - /nginx-ingress-controller
+            - --ingress-class=test1
+#            - --default-backend-service=$(POD_NAMESPACE)/default-http-backend
+#            - --default-ssl-certificate=ingress-nginx/gateway-certs
+#      nodeSelector:
+#        node-role.kubernetes.io/master: ""
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    k8s-app: tls-ingress
+  name: tls-ingress
+  namespace: ingress-nginx
+spec:
+  ports:
+    - port: 80
+      protocol: TCP
+      targetPort: 80
+      name: p1
+    - port: 443
+      protocol: TCP
+      targetPort: 443
+      name: p2
+  type: NodePort
+  selector:
+    k8s-app: tls-ingress
+status:
+  loadBalancer: {}
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-demo
+  annotations:
+    kubernetes.io/ingress.class: "test1"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"  # http-->https
+#    nginx.ingress.kubernetes.io/affinity: cookie
+#    nginx.ingress.kubernetes.io/session-cookie-hash: sha1
+#    nginx.ingress.kubernetes.io/session-cookie-name: route
+#    nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
+#    nginx.ingress.kubernetes.io/auth-tls-secret: "sockjs-tls-secret"
+spec:
+  tls:
+    - hosts:
+      - sockjs.xisheng.vip
+      - tomcat.xisheng.vip
+      secretName: sockjs-tls-secret
+  rules:
+    - host:
+      http:     # 直接通过ingress controller 的ip访问
+        paths:
+          - path: /
+            backend:
+              serviceName: tomcat
+              servicePort: 8080
+          - path: /echo
+            backend:
+              serviceName: sockjs
+              servicePort: 8080
+    - host: sockjs.xisheng.vip
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: sockjs
+              servicePort: 8080
+    - host: tomcat.xisheng.vip
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: tomcat
+              servicePort: 8080
