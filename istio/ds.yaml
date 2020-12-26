@@ -1,0 +1,74 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: test-dr
+  namespace: test
+spec:
+  host: web-svc
+  subsets:
+    - name: tomcat
+      labels:
+        app: tomcat
+    - name: nginx
+      labels:
+        app: nginx
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: test-virtual-svc
+  namespace: test
+spec:
+  gateways:
+    - test-web
+    - mesh
+  hosts:
+    - web-svc
+    - www.cai.com # 因为有了网格内的服务主机的定义，这里就不能用 * 了
+  http:
+    - route:
+        - destination:
+            host: web-svc
+            subset: nginx
+          weight: 10
+        - destination:
+            host: web-svc
+            subset: tomcat
+          weight: 90
+      match:
+        - gateways:
+            - test-web # 限制只对 Ingress 网关的流量有效
+          uri:
+            prefix: /
+    - route:
+        - destination:
+            host: web-svc
+            subset: nginx
+          weight: 100
+        - destination:
+            host: web-svc
+            subset: tomcat
+          weight: 0
+      match:
+        - gateways:
+            - mesh # 对所有网格内服务有效
+          uri:
+            prefix: /
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: test-web
+  namespace: test
+spec:
+  selector:
+    istio: ingressgateway # use istio default controller
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "*"
+
+

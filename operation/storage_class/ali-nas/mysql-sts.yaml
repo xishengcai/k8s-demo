@@ -1,0 +1,96 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: alicloud-nas-fs
+mountOptions:
+  - nolock,tcp,noresvport
+  - vers=3
+parameters:
+  volumeAs: filesystem
+  vpcId: "vpc-j6ctclt613vbwpxqff9n2"
+  vSwitchId: "vsw-j6c43n6tt7wlrfjez7y4w"
+provisioner: nasplugin.csi.alibabacloud.com
+reclaimPolicy: Delete
+---
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: mysql
+  namespace: default
+spec:
+  podManagementPolicy: OrderedReady
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: mysql
+  serviceName: mysql-service
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "123456"
+            - name: MYSQL_PASSWORD
+              value: "123456"
+            - name: MYSQL_USER
+              value: test
+            - name: MYSQL_DATABASE
+          image: registry.cn-hangzhou.aliyuncs.com/launcher/mysql:8.0.18
+          imagePullPolicy: IfNotPresent
+          name: mysql
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: data
+            - mountPath: /etc/mysql/conf.d
+              name: configurations
+      volumes:
+        - configMap:
+            defaultMode: 420
+            name: mysql
+          name: configurations
+  volumeClaimTemplates:   #可看作pvc的模板
+    - metadata:
+        name: data
+      spec:
+        storageClassName: "alicloud-nas-fs"
+        resources:
+          requests:
+            storage: 20Gi
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: mysql
+  namespace: default
+spec:
+  ports:
+    - name: http
+      port: 3306
+      protocol: TCP
+      targetPort: 3306
+  selector:
+    app: mysql
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: mysql
+  name: mysql
+  namespace: default
+data:
+  mysql.cnf: |-
+    [mysqld]
+    pid-file=/var/run/mysqld/mysqld.pid
+    socket=/var/run/mysqld/mysqld.sock
+    datadir=/var/lib/mysql
+    secure-file-priv=NULL
+    symbolic-links=0
+    lower_case_table_names=1
+    max_connections=500
+    sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'

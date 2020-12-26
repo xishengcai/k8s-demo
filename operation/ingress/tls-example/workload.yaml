@@ -50,7 +50,6 @@ metadata:
 spec:
   replicas: 1
   selector:
-    matchLabels:
       run: tomcat
   strategy: {}
   template:

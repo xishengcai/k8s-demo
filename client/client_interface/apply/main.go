@@ -36,9 +36,9 @@ func main() {
 	dep := deployment.GenerateDeployment(workloadName, namespace, imageName)
 
 	// 1.delete deployment
-	if err := c.Delete(ctx, &dep, &client.DeleteOptions{}); err != nil {
-		klog.Fatal(err)
-	}
+	//if err := c.Delete(ctx, &dep, &client.DeleteOptions{}); err != nil {
+	//	klog.Fatal(err)
+	//}
 
 	// patch 选项
 	applyOpts := []client.PatchOption{

@@ -2,20 +2,22 @@
 
 ## 1.前言
 NAS存储盘能将nfs（网络文件系统）挂载到你的Pod中，阿里云Kubernetes CSI支持静态存储卷挂载和动态存储卷挂载2种方式， 在静态存储卷挂载的方式中，
-通常需要手动编辑和创建一个pv/pvc进行挂载，当需要的pv/pvc数量很大的时候，手动创建就显得非常繁琐了，这时动态存储卷挂载的功能可以满足您的需求。本文演示如何使用NAS动态存储卷
+通常需要手动编辑和创建一个pv/pvc进行挂载，当需要的pv/pvc数量很大的时候，手动创建就显得非常繁琐了，这时动态存储卷挂载的功能可以满足您的需求。
+本文演示如何使用NAS动态存储卷
 
 
 ## 2.部署cis-nas-plugin
 如何你的Kubernetes集群中还没有部署， 请参考以下步骤进行部署：
 
 ### 2.1 部署csi-provisioner
+
 ```shell script
 kubectl create -f https://raw.githubusercontent.com/xishengcai/alibaba-cloud-csi-driver/master/deploy/nas/nas-provisioner.yaml
 ```
 
 ### 2.2 部署csi-nasplugin
 ```shell script
-kubectl create -f https://raw.githubusercontent.com/xishengcai/alibaba-cloud-csi-driver/master/deploy/nas/nas-plugin.yaml
+https://raw.githubusercontent.com/xishengcai/alibaba-cloud-csi-driver/master/deploy/nas/nas-plugin.yaml
 ```
 
 ## 3. 使用NAS动态存储卷
@@ -45,7 +47,7 @@ mountOptions:
 - vers=3
 parameters:
   volumeAs: subpath
-  server: "xxxxxxx.cn-hangzhou.nas.aliyuncs.com:/k8s/"
+  server: "xxxx.cn-hongkong.nas.aliyuncs.com"
 provisioner: nasplugin.csi.alibabacloud.com
 reclaimPolicy: Retain
 ```
@@ -71,5 +73,4 @@ kubectl create -f  https://raw.githubusercontent.com/xishengcai/alibaba-cloud-cs
 如果你需要为不同的Pod挂载同一个NAS文件系统的不同子目录， 则需要分别创建pvc-1和nginx-1以及pvc-2和nginx-2。
 
 ## ref
-- [https://zhuanlan.zhihu.com/p/87871885](https://zhuanlan.zhihu.com/p/87871885)
-- [dynamic](https://github.com/kubernetes-sigs/alibaba-cloud-csi-driver/tree/master/examples/nas/dynamic?spm=a2c4e.10696291.0.0.496319a49Fi1LI)
+- [阿里云NAS](https://help.aliyun.com/document_detail/144398.html?spm=a2c4g.11186623.2.17.36b11b4cTUnYx9#task-2342476)

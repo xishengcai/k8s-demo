@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  creationTimestamp: null
+  name: elastic-stack
+---
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: elasticsearch
+  namespace: elastic-stack
+spec:
+  version: 7.6.2
+  nodeSets:
+    - name: default
+      count: 1
+      config:
+        node.master: true
+        node.data: true
+        node.ingest: true
+        node.store.allow_mmap: false
+---
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: kibana
+  namespace: elastic-stack
+spec:
+  version: 7.6.2
+  count: 1
+  elasticsearchRef:
+    name: elasticsearch
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: es-db-0
+  labels:
+    type: local
+spec:
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/data/elastic/db-0"
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: es-db-1
+  labels:
+    type: local
+spec:
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/data/elastic/db-1"

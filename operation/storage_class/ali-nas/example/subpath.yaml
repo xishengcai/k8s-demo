@@ -1,0 +1,40 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: alicloud-nas-subpath
+mountOptions:
+  - nolock,tcp,noresvport
+  - vers=3
+parameters:
+  volumeAs: subpath
+  server: "1201434b77f-rso94.cn-hongkong.nas.aliyuncs.com"
+provisioner: nasplugin.csi.alibabacloud.com
+reclaimPolicy: Retain
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-nas-2
+  labels:
+    app: nginx-2
+spec:
+  selector:
+    matchLabels:
+      app: nginx-2
+  template:
+    metadata:
+      labels:
+        app: nginx-2
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.7.9
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: nas-pvc
+              mountPath: "/data"
+      volumes:
+        - name: nas-pvc
+          persistentVolumeClaim:
+            claimName: nas-csi-pvc

@@ -1,22 +1,22 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: ingress-nginx
-  labels:
-    app.kubernetes.io/name: ingress-nginx
-    app.kubernetes.io/instance: ingress-nginx
+#apiVersion: v1
+#kind: Namespace
+#metadata:
+#  name: ingress-nginx
+#  labels:
+#    app.kubernetes.io/name: ingress-nginx
+#    app.kubernetes.io/instance: ingress-nginx
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: ingress-nginx
-  namespace: ingress-nginx
+  namespace: test
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: ingress-nginx
-  namespace: ingress-nginx
+  namespace: test
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -24,7 +24,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: ingress-nginx
-    namespace: ingress-nginx
+    namespace: test
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -32,7 +32,7 @@ metadata:
   name: tls-ingress
   labels:
     k8s-app: tls-ingress
-  namespace: ingress-nginx
+  namespace: test
 spec:
   replicas: 1
   selector:
@@ -83,7 +83,7 @@ spec:
                   fieldPath: metadata.namespace
           args:
             - /nginx-ingress-controller
-            - --ingress-class=test1
+            - --ingress-class=istio
 #            - --default-backend-service=$(POD_NAMESPACE)/default-http-backend
 #            - --default-ssl-certificate=ingress-nginx/gateway-certs
 #      nodeSelector:
@@ -92,11 +92,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  creationTimestamp: null
   labels:
     k8s-app: tls-ingress
   name: tls-ingress
-  namespace: ingress-nginx
+  namespace: test
 spec:
   ports:
     - port: 80
@@ -110,15 +109,14 @@ spec:
   type: NodePort
   selector:
     k8s-app: tls-ingress
-status:
-  loadBalancer: {}
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: ingress-demo
+  name: web-test2
+  namespace: test
   annotations:
-    kubernetes.io/ingress.class: "test1"
+    kubernetes.io/ingress.class: "istio"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"  # http-->https
 #    nginx.ingress.kubernetes.io/affinity: cookie
 #    nginx.ingress.kubernetes.io/session-cookie-hash: sha1
@@ -126,38 +124,11 @@ metadata:
 #    nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
 #    nginx.ingress.kubernetes.io/auth-tls-secret: "sockjs-tls-secret"
 spec:
-  tls:
-    - hosts:
-      - sockjs.xisheng.vip
-      - tomcat.xisheng.vip
-      secretName: sockjs-tls-secret
-    - hosts:
-        - sockjs.xisheng.vip
-        - tomcat.xisheng.vip
-      secretName: sockjs-tls-secret
   rules:
-    - host:
+    - host: www.cai.com
       http:     # 直接通过ingress controller 的ip访问
         paths:
           - path: /
             backend:
-              serviceName: tomcat
-              servicePort: 8080
-          - path: /echo
-            backend:
-              serviceName: sockjs
-              servicePort: 8080
-    - host: sockjs.xisheng.vip
-      http:
-        paths:
-          - path: /
-            backend:
-              serviceName: sockjs
-              servicePort: 8080
-    - host: tomcat.xisheng.vip
-      http:
-        paths:
-          - path: /
-            backend:
-              serviceName: tomcat
+              serviceName: web-svc
               servicePort: 8080
