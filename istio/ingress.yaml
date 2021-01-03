@@ -109,26 +109,43 @@ spec:
   type: NodePort
   selector:
     k8s-app: tls-ingress
+#---
+#apiVersion: extensions/v1beta1
+#kind: Ingress
+#metadata:
+#  name: web-test2
+#  namespace: test
+#  annotations:
+#    kubernetes.io/ingress.class: "istio"
+#    nginx.ingress.kubernetes.io/ssl-redirect: "false"  # http-->https
+##    nginx.ingress.kubernetes.io/affinity: cookie
+##    nginx.ingress.kubernetes.io/session-cookie-hash: sha1
+##    nginx.ingress.kubernetes.io/session-cookie-name: route
+##    nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
+##    nginx.ingress.kubernetes.io/auth-tls-secret: "sockjs-tls-secret"
+#spec:
+#  rules:
+#    - host: www.cai.com1
+#      http:     # 直接通过ingress controller 的ip访问
+#        paths:
+#          - path: /
+#            backend:
+#              serviceName: web-svc
+#              servicePort: 8080
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: web-test2
-  namespace: test
+  name: canary
   annotations:
     kubernetes.io/ingress.class: "istio"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"  # http-->https
-#    nginx.ingress.kubernetes.io/affinity: cookie
-#    nginx.ingress.kubernetes.io/session-cookie-hash: sha1
-#    nginx.ingress.kubernetes.io/session-cookie-name: route
-#    nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
-#    nginx.ingress.kubernetes.io/auth-tls-secret: "sockjs-tls-secret"
 spec:
   rules:
-    - host: www.cai.com
-      http:     # 直接通过ingress controller 的ip访问
+    - host:
+      http:
         paths:
           - path: /
             backend:
-              serviceName: web-svc
-              servicePort: 8080
+              serviceName: compent-canary-v1
+              servicePort: 80

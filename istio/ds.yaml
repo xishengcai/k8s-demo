@@ -39,7 +39,6 @@ spec:
         - gateways:
             - test-web # 限制只对 Ingress 网关的流量有效
           uri:
-            prefix: /
     - route:
         - destination:
             host: web-svc
