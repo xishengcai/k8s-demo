@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: "test3"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  name: rewrite
+  namespace: test
+spec:
+  rules:
+    - host:
+      http:
+        paths:
+          - backend:
+              serviceName: web-c3
+              servicePort: 80
+            path: /app(/|$)(.*)

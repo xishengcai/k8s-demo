@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    run: nginx-istio
+    istio-injection: enabled
+  name: nginx-istio
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: nginx-istio
+      istio-injection: enabled
+  template:
+    metadata:
+      labels:
+        run: nginx-istio
+        istio-injection: enabled
+    spec:
+      containers:
+        - image: nginx
+          imagePullPolicy: Always
+          name: nginx-istio
+      restartPolicy: Always

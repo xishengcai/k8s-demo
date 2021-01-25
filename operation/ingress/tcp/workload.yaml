@@ -1,7 +1,6 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  creationTimestamp: null
   labels:
     run: sockjs
   name: sockjs
@@ -13,7 +12,6 @@ spec:
   strategy: {}
   template:
     metadata:
-      creationTimestamp: null
       labels:
         run: sockjs
     spec:
@@ -21,12 +19,10 @@ spec:
         - image: xishengcai/sockjs
           name: sockjs
           resources: {}
-status: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  creationTimestamp: null
   labels:
     run: sockjs
   name: sockjs
@@ -37,13 +33,10 @@ spec:
       targetPort: 8080
   selector:
     run: sockjs
-status:
-  loadBalancer: {}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  creationTimestamp: null
   labels:
     run: tomcat
   name: tomcat
@@ -54,7 +47,6 @@ spec:
   strategy: {}
   template:
     metadata:
-      creationTimestamp: null
       labels:
         run: tomcat
     spec:
@@ -62,12 +54,10 @@ spec:
         - image: tomcat
           name: tomcat
           resources: {}
-status: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  creationTimestamp: null
   labels:
     run: tomcat
   name: tomcat
@@ -79,6 +69,4 @@ spec:
       name: p1
   selector:
     run: tomcat
-status:
-  loadBalancer: {}
 

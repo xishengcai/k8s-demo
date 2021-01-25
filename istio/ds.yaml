@@ -6,12 +6,12 @@ metadata:
 spec:
   host: web-svc
   subsets:
-    - name: tomcat
+    - name: canary-v1
       labels:
-        app: tomcat
-    - name: nginx
+        version: v1
+    - name: canary-v2
       labels:
-        app: nginx
+        version: v2
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -29,25 +29,24 @@ spec:
     - route:
         - destination:
             host: web-svc
-            subset: nginx
-          weight: 10
+            version: v1
+          weight: 0
         - destination:
             host: web-svc
-            subset: tomcat
-          weight: 90
+            version: v2
+          weight: 100
       match:
         - gateways:
             - test-web # 限制只对 Ingress 网关的流量有效
-          uri:
     - route:
         - destination:
             host: web-svc
-            subset: nginx
-          weight: 100
+            version: v1
+          weight: 20
         - destination:
             host: web-svc
-            subset: tomcat
-          weight: 0
+            version: v2
+          weight: 50
       match:
         - gateways:
             - mesh # 对所有网格内服务有效

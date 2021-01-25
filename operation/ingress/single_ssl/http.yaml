@@ -5,11 +5,9 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: "test1"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"  # http-->https
-#    nginx.ingress.kubernetes.io/affinity: cookie
-#    nginx.ingress.kubernetes.io/session-cookie-hash: sha1
-#    nginx.ingress.kubernetes.io/session-cookie-name: route
-#    nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
-#    nginx.ingress.kubernetes.io/auth-tls-secret: "sockjs-tls-secret"
+    nginx.ingress.kubernetes.io/affinity: cookie
+    nginx.ingress.kubernetes.io/session-cookie-hash: sha1
+    nginx.ingress.kubernetes.io/session-cookie-name: route
 spec:
   tls:
     - hosts:

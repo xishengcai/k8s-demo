@@ -1,22 +1,14 @@
 apiVersion: v1
-kind: Namespace
-metadata:
-  name: ingress-nginx
-  labels:
-    app.kubernetes.io/name: ingress-nginx
-    app.kubernetes.io/instance: ingress-nginx
----
-apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: ingress-nginx
-  namespace: ingress-nginx2
+  namespace: test
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: ingress-nginx
-  namespace: ingress-nginx2
+  namespace: test
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -24,7 +16,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: ingress-nginx
-    namespace: ingress-nginx2
+    namespace: test
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -32,27 +24,28 @@ metadata:
   name: tls-ingress
   labels:
     k8s-app: tls-ingress
-  namespace: ingress-nginx2
+  namespace: test
 spec:
   replicas: 1
   selector:
     matchLabels:
       k8s-app: tls-ingress
-  revisionHistoryLimit: 10
-  minReadySeconds: 0
   template:
     metadata:
       labels:
         k8s-app: tls-ingress
     spec:
-      terminationGracePeriodSeconds: 60
+      nodeSelector:
+        node-role.kubernetes.io/master: ''
       serviceAccountName: ingress-nginx
       tolerations:
         - key: node-role.kubernetes.io/master
           operator: Exists
           effect: NoSchedule
       containers:
-        - image: registry.cn-hangzhou.aliyuncs.com/launcher/nginx-ingress-controller:v0.41.2
+        - image: registry.cn-hangzhou.aliyuncs.com/launcher/nginx-ingress-controller:v0.43.0
+#        - image: registry.cn-hangzhou.aliyuncs.com/launcher/nginx-ingress-controller:0.20.0
+#        - image: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.30.0
           imagePullPolicy: IfNotPresent
           name: nginx
           readinessProbe:
@@ -67,11 +60,6 @@ spec:
               scheme: HTTP
             initialDelaySeconds: 10
             timeoutSeconds: 1
-          ports:
-            - containerPort: 80
-              protocol: TCP
-            - containerPort: 443
-              protocol: TCP
           env:
             - name: POD_NAME
               valueFrom:
@@ -83,12 +71,10 @@ spec:
                   fieldPath: metadata.namespace
           args:
             - /nginx-ingress-controller
-            - --ingress-class=test1
-            - --tcp-services-configmap=$(POD_NAMESPACE)/tcp-services
-#            - --default-backend-service=$(POD_NAMESPACE)/default-http-backend
-#            - --default-ssl-certificate=ingress-nginx/gateway-certs
-#      nodeSelector:
-#        node-role.kubernetes.io/master: ""
+            - --election-id=ingress-controller-leader
+            - --ingress-class=test
+            - --default-ssl-certificate=test/tls-secret
+            - --v=1
 ---
 apiVersion: v1
 kind: Service
@@ -96,7 +82,7 @@ metadata:
   labels:
     k8s-app: tls-ingress
   name: tls-ingress
-  namespace: ingress-nginx2
+  namespace: test
 spec:
   ports:
     - port: 80
@@ -107,14 +93,6 @@ spec:
       protocol: TCP
       targetPort: 443
       name: p2
-    - name: websock-js-8080
-      port: 8080
-      targetPort: 8080
-      protocol: TCP
-    - name: tomcat-8081
-      port: 8081
-      targetPort: 8081
-      protocol: TCP
-  type: LoadBalancer
+  type: NodePort
   selector:
     k8s-app: tls-ingress

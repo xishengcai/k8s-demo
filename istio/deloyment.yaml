@@ -1,24 +1,27 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nginx-deploy
+  name: c3
   namespace: test
 spec:
   replicas: 1
   selector:
     matchLabels:
-      type: web
       app: nginx
+      component: c3
   template:
     metadata:
       labels:
-        type: web
         app: nginx
+        component: c3
     spec:
       containers:
-        - image: nginx:1.14-alpine
+        - image: xishengcai/canary
           imagePullPolicy: IfNotPresent
           name: nginx
+          env:
+            - name: VERSION
+              value: v3
           ports:
             - containerPort: 80
               name: port
@@ -27,41 +30,86 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: tomcat-deploy
+  name: canary-v2
   namespace: test
 spec:
   replicas: 1
   selector:
     matchLabels:
-      type: web
-      app: tomcat
+      app: nginx
+      component: c2
   template:
     metadata:
       labels:
-        type: web
-        app: tomcat
+        app: nginx
+        component: c2
     spec:
       containers:
-        - image: docker.io/kubeguide/tomcat-app:v1
+        - image: xishengcai/canary
           imagePullPolicy: IfNotPresent
-          name: tomcat
+          name: nginx
+          env:
+            - name: VERSION
+              value: v2
           ports:
-            - containerPort: 8080
+            - containerPort: 80
+              name: port
+              protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: canary-v1
+  namespace: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+      component: c1
+  template:
+    metadata:
+      labels:
+        app: nginx
+        component: c1
+    spec:
+      containers:
+        - image: xishengcai/canary
+          imagePullPolicy: IfNotPresent
+          name: canary
+          ports:
+            - containerPort: 80
               name: port
               protocol: TCP
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: web-svc
+  name: web-c1
   namespace: test
 spec:
   ports:
     - name: port
-      port: 8080
+      port: 80
       protocol: TCP
-      targetPort: 8080
+      targetPort: 80
   selector:
-    type: web
+    component: c1
+  sessionAffinity: None
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-c3
+  namespace: test
+spec:
+  ports:
+    - name: port
+      port: 80
+      protocol: TCP
+      targetPort: 80
+  selector:
+    component: c3
   sessionAffinity: None
   type: NodePort
