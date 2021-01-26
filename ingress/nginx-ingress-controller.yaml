@@ -44,8 +44,6 @@ spec:
           effect: NoSchedule
       containers:
         - image: registry.cn-hangzhou.aliyuncs.com/launcher/nginx-ingress-controller:v0.43.0
-#        - image: registry.cn-hangzhou.aliyuncs.com/launcher/nginx-ingress-controller:0.20.0
-#        - image: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.30.0
           imagePullPolicy: IfNotPresent
           name: nginx
           readinessProbe:
@@ -73,7 +71,7 @@ spec:
             - /nginx-ingress-controller
             - --election-id=ingress-controller-leader
             - --ingress-class=test
-            - --default-ssl-certificate=test/tls-secret
+            - --tcp-services-configmap=$(POD_NAMESPACE)/tcp-services
             - --v=1
 ---
 apiVersion: v1
@@ -88,11 +86,19 @@ spec:
     - port: 80
       protocol: TCP
       targetPort: 80
-      name: p1
+      name: http
     - port: 443
       protocol: TCP
       targetPort: 443
-      name: p2
+      name: https
+    - port: 8080
+      protocol: TCP
+      targetPort: 8080
+      name: tcp1
+    - port: 8081
+      protocol: TCP
+      targetPort: 8081
+      name: tcp2
   type: NodePort
   selector:
     k8s-app: tls-ingress

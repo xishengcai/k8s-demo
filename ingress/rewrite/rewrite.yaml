@@ -1,17 +1,19 @@
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
-  annotations:
-    kubernetes.io/ingress.class: "test3"
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
-  name: rewrite
+  name: ingress-demo-rewrite
   namespace: test
+  annotations:
+    kubernetes.io/ingress.class: "test"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   rules:
-    - host:
+    - host: "www.test.com"
       http:
         paths:
           - backend:
-              serviceName: web-c3
+              serviceName: canary
               servicePort: 80
-            path: /app(/|$)(.*)
+            path: /rewrite(/|$)(.*)
+  tls:
+    - secretName: tls-secret

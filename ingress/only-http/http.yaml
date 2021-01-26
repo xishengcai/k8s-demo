@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-demo-http
+  namespace: test
+  annotations:
+    kubernetes.io/ingress.class: "test"
+spec:
+  rules:
+    - host: "www.test.com"
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: canary
+              servicePort: 80

@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: canary
+  namespace: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: canary
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: canary
+        version: v1
+    spec:
+      containers:
+        - image: xishengcai/canary
+          imagePullPolicy: IfNotPresent
+          name: canary
+          ports:
+            - containerPort: 80
+              name: port
+              protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: canary
+  namespace: test
+spec:
+  ports:
+    - name: port
+      port: 80
+      protocol: TCP
+      targetPort: 80
+  selector:
+    app: canary
+  sessionAffinity: None
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    run: sockjs
+  name: sockjs
+  namespace: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: sockjs
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        run: sockjs
+    spec:
+      containers:
+        - image: xishengcai/sockjs
+          name: sockjs
+          resources: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    run: sockjs
+  name: sockjs
+  namespace: test
+spec:
+  ports:
+    - port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    run: sockjs

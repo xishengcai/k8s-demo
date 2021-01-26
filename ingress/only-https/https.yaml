@@ -1,0 +1,21 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-demo-https
+  namespace: test
+  annotations:
+    kubernetes.io/ingress.class: "test"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  tls:
+    - hosts:
+        - www.test.com
+      secretName: tls-secret
+  rules:
+    - host: 'www.test.com'
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: canary
+              servicePort: 80
